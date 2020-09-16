@@ -92,7 +92,7 @@ add_action( 'user_register', 'uri_teams_save_teams_in_profile' );
  * @return arr
  */
 function uri_teams_modify_user_table( $columns ) {
-	if ( ! _uri_user_can_update() ) { 
+	if ( ! _uri_teams_can_update_profile() ) { 
 		return $columns; 
 	}
   $new_columns = array();
