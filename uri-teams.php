@@ -72,17 +72,17 @@ function uri_teams_filter_content_areas( $query ) {
 		if ( uri_teams_is_team_editor() ) {
 
 			$teams = _uri_teams_get_teams_for_user( get_current_user_id() );
-			$areas = array();
+			$team_ids = array();
 			
 			foreach ( $teams as $team ) {
-				$areas[] = uri_teams_get_content_term_id_by_team( $team, 'content_team' );
+				$team_ids[] = $team->term_id;
 			}
 
 			$query->set( 'tax_query', array(
 				array(
 					'taxonomy' => 'uri_teams',
 					'field'    => 'term_id',
-					'terms'    => $areas,
+					'terms'    => $team_ids,
 					'operator' => 'IN',
 				),
 			) );
@@ -92,19 +92,6 @@ function uri_teams_filter_content_areas( $query ) {
 }
 add_action( 'pre_get_posts', 'uri_teams_filter_content_areas', 10 );
 
-/**
- * Return a term ID for a content term based on that term's content team term.
- * @param  object $term The original term object.
- * @return int          The taxonomy term id.
- */
-function uri_teams_get_content_term_id_by_team( $term ) {
-	if ( is_array( $term ) && isset( $term['invalid_taxonomy'] ) || empty( $term ) ) {
-		return;
-	}
-
-	$new_term = get_term_by( 'slug', $term->slug, 'uri_teams' );
-	return $new_term->term_id;
-}
 
 /**
  * Checks a user's capabilities. 
