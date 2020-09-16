@@ -7,21 +7,15 @@
  * Author URI:  
  *
  * @author John Pennypacker <jpennypacker@uri.edu>
- * @see https://webdevstudios.com/2016/03/22/building-content-teams-wp-user-groups/
  */
 
-
-// plugin needs to be installed
-// https://wordpress.org/plugins/wp-user-groups/
 
 require_once dirname( __FILE__ ) . '/includes/capabilities.php';
 
 
 // stuff that we need on load
 require_once dirname( __FILE__ ) . '/includes/init.php';
-
-// callbacks designed to ensure that taxonomies stay in sync
-require_once dirname( __FILE__ ) . '/includes/teams_sync.php';
+require_once dirname( __FILE__ ) . '/includes/profile.php';
 
 
 
@@ -54,19 +48,17 @@ function uri_teams_dump($var) {
  */
 function uri_teams_get_applicable_post_types() {
 	// get the content types to which we apply teams.
-	$types = get_post_types(array('public'=>TRUE));
+	$types = get_post_types( array( 'public' => TRUE ) );
 	return $types;
 }
 
 
-
-
 /**
- * Handles the magic filtering of Program Areas by Content Team.
+ * Handles the filtering of post types by team.
  *
  * @param  class $query WP_Query that we're modifying.
  */
-function wds_filter_content_areas( $query ) {
+function uri_teams_filter_content_areas( $query ) {
 	if ( ! is_admin() ) {
 		return;
 	}
@@ -79,7 +71,7 @@ function wds_filter_content_areas( $query ) {
 
 		if ( uri_teams_is_team_editor() ) {
 
-			$teams = ( wp_get_terms_for_user( get_current_user_id(), 'teams_users' ) ) ? wp_get_terms_for_user( get_current_user_id(), 'teams_users' ) : array();
+			$teams = _uri_teams_get_teams_for_user( get_current_user_id() );
 			$areas = array();
 			
 			foreach ( $teams as $team ) {
@@ -88,7 +80,7 @@ function wds_filter_content_areas( $query ) {
 
 			$query->set( 'tax_query', array(
 				array(
-					'taxonomy' => 'teams_content',
+					'taxonomy' => 'uri_teams',
 					'field'    => 'term_id',
 					'terms'    => $areas,
 					'operator' => 'IN',
@@ -98,7 +90,7 @@ function wds_filter_content_areas( $query ) {
 		}
 	}
 }
-add_action( 'pre_get_posts', 'wds_filter_content_areas', 10 );
+add_action( 'pre_get_posts', 'uri_teams_filter_content_areas', 10 );
 
 /**
  * Return a term ID for a content term based on that term's content team term.
@@ -110,7 +102,7 @@ function uri_teams_get_content_term_id_by_team( $term ) {
 		return;
 	}
 
-	$new_term = get_term_by( 'slug', $term->slug, 'teams_content' );
+	$new_term = get_term_by( 'slug', $term->slug, 'uri_teams' );
 	return $new_term->term_id;
 }
 
@@ -122,7 +114,7 @@ function uri_teams_get_content_term_id_by_team( $term ) {
  */
 function uri_teams_is_team_editor() {
 
-	// If the current user can only edit team content, we need to filter.
+	// If the current user can edit global content, go no further
 	if ( current_user_can( 'edit_global_content' ) ) {
 		return false;
 	}
@@ -143,24 +135,27 @@ function uri_teams_is_team_editor() {
  *
  * @param  int $post_id The post ID you're editing.
  */
-function uri_teams_add_user_team_terms_to_post( $post_id ) {
+function uri_teams_add_teams_to_post( $post_id ) {
 	if ( wp_is_post_revision( $post_id ) )
 		return;
 
 	// Set Post taxonomy terms to sync with the users taxonomy terms.
-	$user_terms = wp_get_terms_for_user( get_current_user_id(), 'teams_users' );
+	$teams = _uri_teams_get_teams_for_user( get_current_user_id() );
 
 	// Get the normal taxonomy terms that are the same as the user taxonomy terms.
-	foreach ( $user_terms as $term ) {
-		$post_terms[] = $term->slug; // Add the slug to the array, when we add the normal taxon term below it will use the same slug.
+	foreach ( $teams as $team ) {
+		if ( isset( $team->slug ) ) {
+			$post_terms[] = $team->slug; // Add the slug to the array, when we add the normal taxon term below it will use the same slug.
+		}
 	}
 
-	// Actually associate the matched terms with the post.
+	// associate the matched terms with the post.
 	if ( isset( $post_terms ) ) {
-		$__terms = wp_set_object_terms( $post_id, $post_terms, 'teams_content' );
+		$__terms = wp_set_object_terms( $post_id, $post_terms, 'uri_teams' );
 	}
 }
-add_action( 'save_post', 'uri_teams_add_user_team_terms_to_post', 99 );
+add_action( 'save_post', 'uri_teams_add_teams_to_post', 99 );
+
 
 
 

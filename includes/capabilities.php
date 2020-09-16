@@ -46,7 +46,6 @@ function uri_teams_roles() {
 				'edit_published_pages' => true,
 				'publish_pages' => true,
 				'read_private_pages' => true,
-
 				'delete_posts' => true,
 				'delete_published_posts' => true,
 				'edit_others_posts' => true,
@@ -130,7 +129,7 @@ function uri_teams_adjust_caps( $action = '' ) {
 		$caps_map = uri_teams_role_to_caps_map( $slug );
 		if ( is_array( $caps_map ) && $r = get_role( $slug ) ) {
 			// If we have a capabilities map, and a valid role, add the capability to the role
-			foreach($caps_map as $cap) {
+			foreach( $caps_map as $cap ) {
 				$r->$adjust_cap( $cap );
 			}
 		}
