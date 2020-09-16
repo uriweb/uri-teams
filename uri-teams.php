@@ -18,6 +18,8 @@ require_once dirname( __FILE__ ) . '/includes/init.php';
 require_once dirname( __FILE__ ) . '/includes/profile.php';
 
 
+// @todo: make the quick edit interface a drop down instead of a text area
+
 
 /**
  * Returns a variable after going through var_dump().
@@ -106,7 +108,7 @@ function uri_teams_is_team_editor() {
 		return false;
 	}
 
-	// If the current user can only edit team content, we need to filter.
+	// If the current user can't edit global content, but can edit team content, we need to filter.
 	if ( current_user_can( 'edit_team_content' ) ) {
 		return true;
 	}
